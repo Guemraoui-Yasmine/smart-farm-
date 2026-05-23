@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartFarm — Smart Agriculture Against Water Stress</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green-dark: #1B4332;
+    --green-mid: #2D6A4F;
+    --green-light: #95D5B2;
+    --blue: #48CAE4;
+    --blue-dark: #0096C7;
+    --bg: #F8F9FA;
+    --text: #212529;
+    --text-light: #6c757d;
+    --white: #ffffff;
+    --card-shadow: 0 4px 24px rgba(27,67,50,0.10);
+    --card-shadow-hover: 0 8px 40px rgba(27,67,50,0.18);
+    --radius: 16px;
+    --radius-sm: 8px;
+    --transition: 0.3s cubic-bezier(.4,0,.2,1);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; font-size: 16px; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
+  h1,h2,h3,h4 { font-family: 'Playfair Display', serif; }
+
+  /* ─── NAVBAR ─── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+    background: rgba(27,67,50,0.97); backdrop-filter: blur(12px);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 2.5rem; height: 68px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.18);
+  }
+  .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+  .nav-logo-icon { width: 36px; height: 36px; background: var(--green-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+  .nav-logo-text { font-family: 'Playfair Display', serif; color: var(--white); font-size: 1.4rem; font-weight: 700; letter-spacing: 0.5px; }
+  .nav-links { display: flex; gap: 0.2rem; list-style: none; }
+  .nav-links a {
+    color: rgba(255,255,255,0.82); text-decoration: none; font-size: 0.93rem; font-weight: 500;
+    padding: 0.45rem 0.95rem; border-radius: 6px; transition: var(--transition);
+  }
+  .nav-links a:hover, .nav-links a.active { color: var(--green-light); background: rgba(149,213,178,0.12); }
+  .nav-hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; }
+  .nav-hamburger span { width: 26px; height: 2px; background: var(--white); border-radius: 2px; transition: var(--transition); }
+  @media(max-width:768px) {
+    nav { padding: 0 1.2rem; }
+    .nav-hamburger { display: flex; }
+    .nav-links { display: none; flex-direction: column; gap: 0; position: absolute; top: 68px; left: 0; right: 0; background: var(--green-dark); padding: 1rem; }
+    .nav-links.open { display: flex; }
+    .nav-links a { padding: 0.7rem 1rem; border-radius: var(--radius-sm); }
+  }
+
+  /* ─── PAGE SYSTEM ─── */
+  .page { display: none; min-height: 100vh; padding-top: 68px; }
+  .page.active { display: block; }
+
+  /* ─── HERO ─── */
+  #hero {
+    min-height: 100vh;
+    background: linear-gradient(135deg, rgba(27,67,50,0.82) 0%, rgba(0,96,199,0.35) 100%),
+      url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1600&q=80') center/cover no-repeat;
+    display: flex; align-items: center; justify-content: center; text-align: center; position: relative; overflow: hidden;
+  }
+  .hero-particles { position: absolute; inset: 0; pointer-events: none; }
+  .hero-content { position: relative; z-index: 2; max-width: 780px; padding: 2rem; animation: fadeUp 1s ease; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(149,213,178,0.18); border: 1px solid rgba(149,213,178,0.4);
+    color: var(--green-light); font-size: 0.85rem; font-weight: 600;
+    padding: 0.4rem 1rem; border-radius: 100px; margin-bottom: 1.5rem; backdrop-filter: blur(8px);
+  }
+  .hero-badge .dot { width: 8px; height: 8px; background: var(--green-light); border-radius: 50%; animation: pulse 2s infinite; }
+  .hero-title { font-size: clamp(2.4rem, 6vw, 4.2rem); color: var(--white); line-height: 1.12; margin-bottom: 1.2rem; }
+  .hero-title span { color: var(--green-light); display: block; }
+  .hero-sub { font-size: clamp(1rem, 2.5vw, 1.25rem); color: rgba(255,255,255,0.85); margin-bottom: 2.5rem; font-weight: 400; }
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--green-light); color: var(--green-dark); font-weight: 700; font-size: 1.05rem;
+    padding: 0.95rem 2.2rem; border-radius: 100px; border: none; cursor: pointer;
+    text-decoration: none; transition: var(--transition);
+    box-shadow: 0 4px 24px rgba(149,213,178,0.45);
+  }
+  .btn-primary:hover { background: var(--white); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(149,213,178,0.5); }
+  .btn-secondary {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: transparent; color: var(--white); font-weight: 600; font-size: 0.95rem;
+    padding: 0.8rem 1.8rem; border-radius: 100px; border: 1.5px solid rgba(255,255,255,0.45); cursor: pointer;
+    text-decoration: none; transition: var(--transition);
+  }
+  .btn-secondary:hover { background: rgba(255,255,255,0.12); border-color: var(--white); }
+  .hero-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+  .hero-stats { display: flex; gap: 2rem; justify-content: center; margin-top: 3.5rem; flex-wrap: wrap; }
+  .hero-stat { text-align: center; }
+  .hero-stat-num { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 800; color: var(--green-light); }
+  .hero-stat-label { font-size: 0.8rem; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 0.08em; }
+  .hero-scroll { position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.6); font-size: 0.8rem; display: flex; flex-direction: column; align-items: center; gap: 6px; animation: bounce 2s infinite; }
+  .hero-scroll-arrow { width: 20px; height: 20px; border-right: 2px solid rgba(255,255,255,0.6); border-bottom: 2px solid rgba(255,255,255,0.6); transform: rotate(45deg); }
+  .features-strip { display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap; padding: 3rem 2rem; background: var(--white); box-shadow: 0 -2px 32px rgba(27,67,50,0.08); }
+  .feature-chip { display: flex; align-items: center; gap: 10px; font-size: 0.95rem; font-weight: 500; color: var(--green-dark); }
+  .feature-chip svg { color: var(--green-mid); }
+
+  /* ─── SECTION HEADER ─── */
+  .section-header { text-align: center; max-width: 680px; margin: 0 auto 3rem; }
+  .section-tag { display: inline-block; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--green-mid); background: rgba(45,106,79,0.1); padding: 0.3rem 0.9rem; border-radius: 100px; margin-bottom: 0.8rem; }
+  .section-title { font-size: clamp(1.9rem, 4vw, 2.8rem); color: var(--green-dark); margin-bottom: 0.8rem; line-height: 1.2; }
+  .section-sub { color: var(--text-light); font-size: 1.05rem; line-height: 1.6; }
+  section { padding: 5rem 2rem; }
+
+  /* ─── CARDS ─── */
+  .card {
+    background: var(--white); border-radius: var(--radius); padding: 1.8rem;
+    box-shadow: var(--card-shadow); transition: var(--transition);
+    border: 1px solid rgba(27,67,50,0.07);
+  }
+  .card:hover { box-shadow: var(--card-shadow-hover); transform: translateY(-3px); }
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; max-width: 1100px; margin: 0 auto; }
+  .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; max-width: 1200px; margin: 0 auto; }
+
+  /* ─── WEATHER ─── */
+  .weather-container { max-width: 1000px; margin: 0 auto; }
+  .weather-search { display: flex; gap: 1rem; margin-bottom: 2.5rem; flex-wrap: wrap; }
+  .weather-input {
+    flex: 1; min-width: 220px; padding: 0.85rem 1.2rem; border: 2px solid rgba(27,67,50,0.15);
+    border-radius: 100px; font-size: 1rem; font-family: inherit; outline: none; transition: var(--transition);
+    background: var(--white);
+  }
+  .weather-input:focus { border-color: var(--green-mid); box-shadow: 0 0 0 3px rgba(45,106,79,0.12); }
+  .btn-search {
+    padding: 0.85rem 1.8rem; background: var(--green-dark); color: var(--white); border: none;
+    border-radius: 100px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: var(--transition); font-family: inherit;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .btn-search:hover { background: var(--green-mid); transform: translateY(-1px); }
+  .weather-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+  .w-card { background: var(--white); border-radius: var(--radius); padding: 1.4rem 1.2rem; box-shadow: var(--card-shadow); text-align: center; border: 1px solid rgba(27,67,50,0.07); transition: var(--transition); }
+  .w-card:hover { transform: translateY(-2px); }
+  .w-icon { font-size: 2.2rem; margin-bottom: 0.5rem; }
+  .w-label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-light); margin-bottom: 0.3rem; font-weight: 600; }
+  .w-value { font-size: 1.7rem; font-weight: 700; color: var(--green-dark); font-family: 'Playfair Display', serif; }
+  .w-unit { font-size: 0.85rem; color: var(--text-light); font-family: 'DM Sans', sans-serif; font-weight: 400; }
+  .stress-card { border-radius: var(--radius); padding: 1.8rem; margin-bottom: 1.5rem; transition: var(--transition); }
+  .stress-card.low { background: linear-gradient(135deg, #d4edda, #c3e6cb); border: 2px solid #28a745; }
+  .stress-card.medium { background: linear-gradient(135deg, #fff3cd, #ffeeba); border: 2px solid #ffc107; }
+  .stress-card.high { background: linear-gradient(135deg, #ffe8d0, #ffd5b5); border: 2px solid #fd7e14; }
+  .stress-card.critical { background: linear-gradient(135deg, #f8d7da, #f5c6cb); border: 2px solid #dc3545; }
+  .stress-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.3rem; }
+  .stress-msg { font-size: 0.95rem; }
+  .forecast-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; }
+  .forecast-day { background: var(--white); border-radius: var(--radius-sm); padding: 1rem; text-align: center; box-shadow: var(--card-shadow); }
+  .forecast-day .day-name { font-weight: 700; font-size: 0.85rem; color: var(--green-dark); text-transform: uppercase; letter-spacing: 0.06em; }
+  .forecast-day .day-icon { font-size: 1.8rem; margin: 0.4rem 0; }
+  .forecast-day .day-temp { font-size: 1.2rem; font-weight: 700; color: var(--text); }
+  .forecast-day .day-rain { font-size: 0.8rem; color: var(--blue-dark); }
+  .weather-placeholder { text-align: center; padding: 3rem; color: var(--text-light); }
+  .weather-placeholder .big-icon { font-size: 4rem; display: block; margin-bottom: 1rem; }
+
+  /* ─── SENSOR ADVISOR ─── */
+  .advisor-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; max-width: 1100px; margin: 0 auto; align-items: start; }
+  @media(max-width:768px) { .advisor-layout { grid-template-columns: 1fr; } }
+  .advisor-form { background: var(--white); border-radius: var(--radius); padding: 2rem; box-shadow: var(--card-shadow); }
+  .form-group { margin-bottom: 1.3rem; }
+  .form-label { display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--green-dark); }
+  .form-select, .form-input {
+    width: 100%; padding: 0.75rem 1rem; border: 2px solid rgba(27,67,50,0.15); border-radius: var(--radius-sm);
+    font-size: 0.95rem; font-family: inherit; outline: none; transition: var(--transition); background: var(--bg);
+  }
+  .form-select:focus, .form-input:focus { border-color: var(--green-mid); background: var(--white); }
+  .btn-full { width: 100%; padding: 0.95rem; background: var(--green-dark); color: var(--white); border: none; border-radius: var(--radius-sm); font-size: 1rem; font-weight: 700; cursor: pointer; transition: var(--transition); font-family: inherit; margin-top: 0.5rem; }
+  .btn-full:hover { background: var(--green-mid); }
+  .recommendation-box { background: var(--white); border-radius: var(--radius); padding: 2rem; box-shadow: var(--card-shadow); }
+  .rec-section { margin-bottom: 1.5rem; }
+  .rec-section-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--green-dark); margin-bottom: 0.8rem; display: flex; align-items: center; gap: 8px; }
+  .rec-tag { display: inline-flex; align-items: center; gap: 6px; background: rgba(27,67,50,0.08); color: var(--green-dark); font-size: 0.85rem; font-weight: 600; padding: 0.3rem 0.85rem; border-radius: 100px; margin: 0.2rem; }
+  .rec-tag.blue { background: rgba(72,202,228,0.15); color: var(--blue-dark); }
+  .savings-bar { background: rgba(27,67,50,0.1); border-radius: 100px; height: 10px; margin-top: 0.5rem; overflow: hidden; }
+  .savings-fill { height: 100%; background: linear-gradient(90deg, var(--green-mid), var(--green-light)); border-radius: 100px; transition: width 1s ease; }
+  .placeholder-rec { text-align: center; padding: 3rem 1rem; color: var(--text-light); }
+  .placeholder-rec .icon { font-size: 3.5rem; display: block; margin-bottom: 1rem; }
+
+  /* ─── MARKETPLACE ─── */
+  .market-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; max-width: 1200px; margin: 0 auto; }
+  .product-card { background: var(--white); border-radius: var(--radius); overflow: hidden; box-shadow: var(--card-shadow); transition: var(--transition); border: 1px solid rgba(27,67,50,0.07); display: flex; flex-direction: column; }
+  .product-card:hover { box-shadow: var(--card-shadow-hover); transform: translateY(-4px); }
+  .product-img { width: 100%; height: 180px; object-fit: cover; background: linear-gradient(135deg, #e8f5e9, #c8e6c9); display: flex; align-items: center; justify-content: center; font-size: 3.5rem; }
+  .product-body { padding: 1.4rem; flex: 1; display: flex; flex-direction: column; }
+  .product-badge { display: inline-block; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; background: rgba(27,67,50,0.1); color: var(--green-dark); padding: 0.2rem 0.7rem; border-radius: 100px; margin-bottom: 0.7rem; }
+  .product-name { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--green-dark); margin-bottom: 0.5rem; }
+  .product-desc { font-size: 0.88rem; color: var(--text-light); line-height: 1.5; margin-bottom: 0.8rem; flex: 1; }
+  .product-price { font-size: 1.2rem; font-weight: 800; color: var(--green-dark); margin-bottom: 0.4rem; }
+  .product-best { font-size: 0.8rem; color: var(--text-light); margin-bottom: 1rem; }
+  .product-btns { display: flex; gap: 0.6rem; }
+  .btn-buy { flex: 1; padding: 0.6rem; background: var(--green-dark); color: var(--white); border: none; border-radius: var(--radius-sm); font-size: 0.88rem; font-weight: 700; cursor: pointer; transition: var(--transition); font-family: inherit; text-decoration: none; text-align: center; }
+  .btn-buy:hover { background: var(--green-mid); }
+  .btn-learn { flex: 1; padding: 0.6rem; background: transparent; color: var(--green-dark); border: 1.5px solid var(--green-dark); border-radius: var(--radius-sm); font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: var(--transition); font-family: inherit; }
+  .btn-learn:hover { background: rgba(27,67,50,0.08); }
+  .product-detail { display: none; background: rgba(27,67,50,0.04); border-radius: var(--radius-sm); padding: 1rem; margin-top: 0.8rem; font-size: 0.85rem; color: var(--text); line-height: 1.6; }
+  .product-detail.open { display: block; animation: fadeIn 0.3s ease; }
+
+  /* ─── KNOWLEDGE ─── */
+  .knowledge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; max-width: 1100px; margin: 0 auto; }
+  .article-card { background: var(--white); border-radius: var(--radius); box-shadow: var(--card-shadow); overflow: hidden; transition: var(--transition); }
+  .article-card:hover { box-shadow: var(--card-shadow-hover); transform: translateY(-3px); }
+  .article-top { padding: 1.6rem 1.6rem 0; }
+  .article-cat { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--blue-dark); margin-bottom: 0.6rem; }
+  .article-title { font-family: 'Playfair Display', serif; font-size: 1.15rem; color: var(--green-dark); margin-bottom: 0.6rem; line-height: 1.3; }
+  .article-desc { font-size: 0.88rem; color: var(--text-light); line-height: 1.55; }
+  .article-meta { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.6rem; border-top: 1px solid rgba(27,67,50,0.08); margin-top: 1rem; }
+  .article-time { font-size: 0.8rem; color: var(--text-light); display: flex; align-items: center; gap: 5px; }
+  .btn-expand { font-size: 0.85rem; font-weight: 700; color: var(--green-mid); background: none; border: none; cursor: pointer; transition: var(--transition); font-family: inherit; }
+  .btn-expand:hover { color: var(--green-dark); }
+  .article-content { display: none; padding: 0 1.6rem 1.4rem; font-size: 0.88rem; color: var(--text); line-height: 1.7; border-top: 1px solid rgba(27,67,50,0.06); margin-top: 0; }
+  .article-content.open { display: block; animation: fadeIn 0.3s ease; }
+
+  /* ─── ABOUT ─── */
+  .about-container { max-width: 900px; margin: 0 auto; }
+  .about-hero-card { background: linear-gradient(135deg, var(--green-dark), var(--green-mid)); border-radius: var(--radius); padding: 3rem; color: var(--white); text-align: center; margin-bottom: 2.5rem; position: relative; overflow: hidden; }
+  .about-hero-card::before { content: ''; position: absolute; top: -60px; right: -60px; width: 200px; height: 200px; background: rgba(149,213,178,0.15); border-radius: 50%; }
+  .about-hero-card::after { content: ''; position: absolute; bottom: -40px; left: -40px; width: 150px; height: 150px; background: rgba(72,202,228,0.12); border-radius: 50%; }
+  .about-hero-card h2 { font-size: 2rem; margin-bottom: 0.8rem; position: relative; }
+  .about-hero-card p { opacity: 0.85; line-height: 1.7; position: relative; }
+  .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.2rem; margin-top: 2rem; }
+  .team-card { background: var(--white); border-radius: var(--radius); padding: 1.5rem; text-align: center; box-shadow: var(--card-shadow); transition: var(--transition); }
+  .team-card:hover { box-shadow: var(--card-shadow-hover); transform: translateY(-3px); }
+  .team-avatar { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--green-light), var(--blue)); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin: 0 auto 1rem; font-family: 'Playfair Display', serif; color: var(--green-dark); font-weight: 800; }
+  .team-name { font-weight: 700; color: var(--green-dark); font-size: 0.98rem; margin-bottom: 0.3rem; }
+  .team-role { font-size: 0.82rem; color: var(--text-light); }
+  .info-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.2rem; margin-top: 2.5rem; }
+  .info-card { background: var(--white); border-radius: var(--radius); padding: 1.5rem; text-align: center; box-shadow: var(--card-shadow); border-top: 4px solid var(--green-light); }
+  .info-card .i-icon { font-size: 2rem; margin-bottom: 0.6rem; }
+  .info-card h4 { font-family: 'Playfair Display', serif; color: var(--green-dark); font-size: 1rem; margin-bottom: 0.3rem; }
+  .info-card p { font-size: 0.85rem; color: var(--text-light); }
+
+  /* ─── FOOTER ─── */
+  footer {
+    background: var(--green-dark); color: rgba(255,255,255,0.75); text-align: center;
+    padding: 2.5rem 2rem; margin-top: 0;
+  }
+  footer .footer-logo { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--white); margin-bottom: 0.5rem; }
+  footer .footer-sub { font-size: 0.85rem; margin-bottom: 1.2rem; }
+  footer .footer-links { display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  footer .footer-links a { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 0.85rem; transition: var(--transition); }
+  footer .footer-links a:hover { color: var(--green-light); }
+  footer .footer-copy { font-size: 0.8rem; opacity: 0.55; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.2rem; }
+
+  /* ─── ANIMATIONS ─── */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes pulse { 0%,100%{ opacity: 1; transform: scale(1); } 50%{ opacity: 0.5; transform: scale(0.9); } }
+  @keyframes bounce { 0%,100%{ transform: translateX(-50%) translateY(0); } 50%{ transform: translateX(-50%) translateY(-8px); } }
+  .fade-in { animation: fadeIn 0.5s ease; }
+
+  /* ─── UTILS ─── */
+  .text-center { text-align: center; }
+  .mt-1 { margin-top: 0.5rem; } .mt-2 { margin-top: 1rem; } .mt-3 { margin-top: 1.5rem; }
+  .mb-1 { margin-bottom: 0.5rem; } .mb-2 { margin-bottom: 1rem; }
+  .divider { height: 1px; background: rgba(27,67,50,0.1); margin: 1.2rem 0; }
+  .tag { display: inline-block; font-size: 0.8rem; font-weight: 600; background: rgba(27,67,50,0.09); color: var(--green-dark); padding: 0.2rem 0.7rem; border-radius: 100px; margin-right: 0.3rem; }
+  .loading { text-align: center; color: var(--text-light); padding: 2rem; font-size: 1rem; }
+  .error { background: #f8d7da; color: #721c24; border-radius: var(--radius-sm); padding: 1rem; font-size: 0.9rem; margin-bottom: 1rem; }
+
+  /* ─── SCROLL REVEAL ─── */
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* ─── MOBILE ─── */
+  @media(max-width:480px) {
+    .weather-grid { grid-template-columns: repeat(2,1fr); }
+    .forecast-grid { grid-template-columns: repeat(3,1fr); }
+    section { padding: 3.5rem 1.2rem; }
+    .hero-stats { gap: 1.2rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav id="navbar">
+  <a class="nav-logo" href="#" onclick="showPage('home')">
+    <div class="nav-logo-icon">🌿</div>
+    <span class="nav-logo-text">SmartFarm</span>
+  </a>
+  <div class="nav-hamburger" id="hamburger" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </div>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="#" onclick="showPage('home')" data-page="home" class="active">Home</a></li>
+    <li><a href="#" onclick="showPage('weather')" data-page="weather">Weather</a></li>
+    <li><a href="#" onclick="showPage('advisor')" data-page="advisor">Sensor Advisor</a></li>
+    <li><a href="#" onclick="showPage('market')" data-page="market">Marketplace</a></li>
+    <li><a href="#" onclick="showPage('knowledge')" data-page="knowledge">Knowledge</a></li>
+    <li><a href="#" onclick="showPage('about')" data-page="about">About</a></li>
+  </ul>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- PAGE 1: HOME -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div id="page-home" class="page active">
+  <section id="hero">
+    <div class="hero-content">
+      <div class="hero-badge"><span class="dot"></span> AI-Powered Agriculture Platform</div>
+      <h1 class="hero-title">Smart Agriculture<span>Against Water Stress</span></h1>
+      <p class="hero-sub">Technology that saves water, grows more — empowering farmers with real-time data, smart sensors, and precision irrigation.</p>
+      <div class="hero-btns">
+        <a href="#" class="btn-primary" onclick="showPage('weather')">🚀 Get Started</a>
+        <a href="#" class="btn-secondary" onclick="showPage('knowledge')">📚 Learn More</a>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat"><div class="hero-stat-num">40%</div><div class="hero-stat-label">Water Savings</div></div>
+        <div class="hero-stat"><div class="hero-stat-num">3x</div><div class="hero-stat-label">Crop Yield</div></div>
+        <div class="hero-stat"><div class="hero-stat-num">500+</div><div class="hero-stat-label">Farms Helped</div></div>
+        <div class="hero-stat"><div class="hero-stat-num">24/7</div><div class="hero-stat-label">Monitoring</div></div>
+      </div>
+    </div>
+    <div class="hero-scroll"><span>Scroll</span><div class="hero-scroll-arrow"></div></div>
+  </section>
+
+  <div class="features-strip">
+    <div class="feature-chip">🌡️ Real-time Weather Monitoring</div>
+    <div class="feature-chip">💧 Smart Irrigation Advisor</div>
+    <div class="feature-chip">📡 IoT Sensor Recommendations</div>
+    <div class="feature-chip">🌾 Crop-specific Guidance</div>
+    <div class="feature-chip">📊 Data-driven Decisions</div>
+  </div>
+
+  <section style="background:var(--white);">
+    <div class="section-header reveal">
+      <div class="section-tag">Why SmartFarm</div>
+      <h2 class="section-title">Everything You Need to Farm Smarter</h2>
+      <p class="section-sub">From weather alerts to sensor recommendations, SmartFarm puts the power of precision agriculture in every farmer's hands.</p>
+    </div>
+    <div class="grid-3">
+      <div class="card reveal" style="border-top:4px solid #1B4332">
+        <div style="font-size:2.2rem;margin-bottom:1rem">🌦️</div>
+        <h3 style="font-family:'Playfair Display',serif;color:var(--green-dark);margin-bottom:0.5rem;font-size:1.2rem">Live Weather Dashboard</h3>
+        <p style="color:var(--text-light);font-size:0.92rem;line-height:1.6">Get real-time temperature, humidity, rainfall forecasts, and a color-coded water stress alert for your exact location.</p>
+      </div>
+      <div class="card reveal" style="border-top:4px solid #48CAE4">
+        <div style="font-size:2.2rem;margin-bottom:1rem">🤖</div>
+        <h3 style="font-family:'Playfair Display',serif;color:var(--green-dark);margin-bottom:0.5rem;font-size:1.2rem">AI Sensor Advisor</h3>
+        <p style="color:var(--text-light);font-size:0.92rem;line-height:1.6">Input your farm profile and receive personalized sensor and irrigation technology recommendations with cost estimates.</p>
+      </div>
+      <div class="card reveal" style="border-top:4px solid #95D5B2">
+        <div style="font-size:2.2rem;margin-bottom:1rem">🛒</div>
+        <h3 style="font-family:'Playfair Display',serif;color:var(--green-dark);margin-bottom:0.5rem;font-size:1.2rem">Smart Marketplace</h3>
+        <p style="color:var(--text-light);font-size:0.92rem;line-height:1.6">Browse curated agri-tech products including sensors, irrigation kits, and drones, matched to your farm's needs.</p>
+      </div>
+      <div class="card reveal" style="border-top:4px solid #fd7e14">
+        <div style="font-size:2.2rem;margin-bottom:1rem">📚</div>
+        <h3 style="font-family:'Playfair Display',serif;color:var(--green-dark);margin-bottom:0.5rem;font-size:1.2rem">Knowledge Center</h3>
+        <p style="color:var(--text-light);font-size:0.92rem;line-height:1.6">Learn smart agriculture concepts, success stories, and installation guides written for farmers, by agricultural engineers.</p>
+      </div>
+      <div class="card reveal" style="border-top:4px solid #6f42c1">
+        <div style="font-size:2.2rem;margin-bottom:1rem">📡</div>
+        <h3 style="font-family:'Playfair Display',serif;color:var(--green-dark);margin-bottom:0.5rem;font-size:1.2rem">IoT Integration</h3>
+        <p style="color:var(--text-light);font-size:0.92rem;line-height:1.6">Connect soil sensors, flow meters, and weather stations to create a fully automated precision farming system.</p>
+      </div>
+      <div class="card reveal" style="border-top:4px solid #dc3545">
+        <div style="font-size:2.2rem;margin-bottom:1rem">🚨</div>
+        <h3 style="font-family:'Playfair Display',serif;color:var(--green-dark);margin-bottom:0.5rem;font-size:1.2rem">Smart Alerts</h3>
+        <p style="color:var(--text-light);font-size:0.92rem;line-height:1.6">Receive instant color-coded alerts when water stress is detected, with clear irrigation recommendations to act fast.</p>
+      </div>
+    </div>
+  </section>
+
+  <section style="background:linear-gradient(135deg,var(--green-dark),#0096C7);padding:4rem 2rem;text-align:center">
+    <h2 style="font-family:'Playfair Display',serif;color:var(--white);font-size:2.2rem;margin-bottom:1rem">Ready to Transform Your Farm?</h2>
+    <p style="color:rgba(255,255,255,0.8);margin-bottom:2rem;font-size:1.05rem">Join SmartFarm today and start making data-driven decisions for your crops.</p>
+    <a href="#" class="btn-primary" onclick="showPage('advisor')" style="font-size:1.1rem;padding:1rem 2.5rem">🌱 Start Your Farm Analysis</a>
+  </section>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- PAGE 2: WEATHER -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div id="page-weather" class="page">
+  <section>
+    <div class="section-header">
+      <div class="section-tag">Live Data</div>
+      <h2 class="section-title">Weather & Field Conditions</h2>
+      <p class="section-sub">Enter your city or region to get real-time weather data and a water stress assessment for your farmland.</p>
+    </div>
+    <div class="weather-container">
+      <div class="weather-search">
+        <input type="text" class="weather-input" id="cityInput" placeholder="Enter city or region (e.g. Algiers, Oran, Tlemcen...)" onkeydown="if(event.key==='Enter')fetchWeather()">
+        <button class="btn-search" onclick="fetchWeather()">🔍 Search</button>
+      </div>
+      <div id="weatherError"></div>
+      <div id="weatherData">
+        <div class="weather-placeholder">
+          <span class="big-icon">🌤️</span>
+          <h3 style="color:var(--green-dark);font-family:'Playfair Display',serif;margin-bottom:0.5rem">Enter Your Location</h3>
+          <p>Type your city name above and click Search to get real-time weather data and water stress analysis for your farm.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- PAGE 3: SENSOR ADVISOR -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div id="page-advisor" class="page">
+  <section>
+    <div class="section-header">
+      <div class="section-tag">Personalized Advice</div>
+      <h2 class="section-title">Smart Sensor Advisor</h2>
+      <p class="section-sub">Tell us about your farm and we'll recommend the best sensors, irrigation technology, and estimate your potential water savings.</p>
+    </div>
+    <div class="advisor-layout">
+      <div class="advisor-form">
+        <h3 style="font-family:'Playfair Display',serif;color:var(--green-dark);font-size:1.3rem;margin-bottom:1.5rem">🌿 Your Farm Profile</h3>
+        <div class="form-group">
+          <label class="form-label">Region Type</label>
+          <select class="form-select" id="region">
+            <option value="">Select region...</option>
+            <option value="arid">🏜️ Arid</option>
+            <option value="semi-arid">🌵 Semi-arid</option>
+            <option value="mediterranean">🌊 Mediterranean</option>
+            <option value="tropical">🌴 Tropical</option>
+            <option value="temperate">🌳 Temperate</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Crop Type</label>
+          <select class="form-select" id="crop">
+            <option value="">Select crop...</option>
+            <option value="wheat">🌾 Wheat</option>
+            <option value="corn">🌽 Corn</option>
+            <option value="rice">🍚 Rice</option>
+            <option value="vegetables">🥦 Vegetables</option>
+            <option value="fruit-trees">🍊 Fruit Trees</option>
+            <option value="other">🌱 Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Farm Size</label>
+          <select class="form-select" id="farmSize">
+            <option value="">Select size...</option>
+            <option value="small">Small (&lt;2 ha)</option>
+            <option value="medium">Medium (2–10 ha)</option>
+            <option value="large">Large (&gt;10 ha)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Budget Range</label>
+          <select class="form-select" id="budget">
+            <option value="">Select budget...</option>
+            <option value="low">💚 Low (&lt;$500)</option>
+            <option value="medium">💛 Medium ($500–$2000)</option>
+            <option value="high">🔴 High (&gt;$2000)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Water Source</label>
+          <select class="form-select" id="waterSource">
+            <option value="">Select water source...</option>
+            <option value="rain">🌧️ Rain-fed</option>
+            <option value="groundwater">💧 Groundwater</option>
+            <option value="river">🏞️ River</option>
+            <option value="mixed">🔀 Mixed</option>
+          </select>
+        </div>
+        <button class="btn-full" onclick="getRecommendation()">🤖 Get Recommendation</button>
+      </div>
+      <div class="recommendation-box" id="recBox">
+        <div class="placeholder-rec">
+          <span class="icon">🤖</span>
+          <h3 style="font-family:'Playfair Display',serif;color:var(--green-dark);margin-bottom:0.5rem">Your Personalized Plan</h3>
+          <p style="font-size:0.9rem">Fill in the form on the left and click "Get Recommendation" to see sensors, irrigation tech, costs, and water savings tailored to your farm.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- PAGE 4: MARKETPLACE -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div id="page-market" class="page">
+  <section>
+    <div class="section-header">
+      <div class="section-tag">Shop Smart</div>
+      <h2 class="section-title">Sensor & Technology Marketplace</h2>
+      <p class="section-sub">Curated agri-tech products selected for quality, reliability, and water-saving performance.</p>
+    </div>
+    <div class="market-grid" id="marketGrid"></div>
+  </section>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- PAGE 5: KNOWLEDGE CENTER -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div id="page-knowledge" class="page">
+  <section>
+    <div class="section-header">
+      <div class="section-tag">Education</div>
+      <h2 class="section-title">Farmer Knowledge Center</h2>
+      <p class="section-sub">Practical guides, success stories, and deep dives into smart agriculture technology — written for farmers and agricultural engineers.</p>
+    </div>
+    <div class="knowledge-grid" id="knowledgeGrid"></div>
+  </section>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- PAGE 6: ABOUT -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div id="page-about" class="page">
+  <section>
+    <div class="about-container">
+      <div class="about-hero-card">
+        <h2>SmartFarm Project</h2>
+        <p style="font-size:1.05rem;line-height:1.7">Smart Agriculture Against Water Stress is an academic initiative developed at ESI Algiers as part of the Digital Economy course. Our platform empowers farmers with real-time data, AI-driven sensor recommendations, and precision irrigation guidance to combat growing water stress challenges in agriculture.</p>
+      </div>
+
+      <div class="section-header" style="margin-bottom:1.5rem">
+        <div class="section-tag">The Team</div>
+        <h2 class="section-title">ESI Algiers — Team A2</h2>
+        <p class="section-sub">First-year students passionate about using technology to solve real-world agricultural challenges.</p>
+      </div>
+
+      <div class="team-grid">
+        <div class="team-card reveal">
+          <div class="team-avatar">YG</div>
+          <div class="team-name">Guemraoui Yasmine</div>
+          <div class="team-role">Team Member · 1CP</div>
+        </div>
+        <div class="team-card reveal">
+          <div class="team-avatar">NZ</div>
+          <div class="team-name">Zenati Nada</div>
+          <div class="team-role">Team Member · 1CP</div>
+        </div>
+        <div class="team-card reveal">
+          <div class="team-avatar">KE</div>
+          <div class="team-name">Ezzraimi Khadidja</div>
+          <div class="team-role">Team Member · 1CP</div>
+        </div>
+        <div class="team-card reveal">
+          <div class="team-avatar">LM</div>
+          <div class="team-name">Medjitna Lamis</div>
+          <div class="team-role">Team Member · 1CP</div>
+        </div>
+        <div class="team-card reveal">
+          <div class="team-avatar">CB</div>
+          <div class="team-name">Bacha Chafika</div>
+          <div class="team-role">Team Member · 1CP</div>
+        </div>
+        <div class="team-card reveal">
+          <div class="team-avatar">FG</div>
+          <div class="team-name">Gherbi Ferdous</div>
+          <div class="team-role">Team Member · 1CP</div>
+        </div>
+      </div>
+
+      <div class="info-cards">
+        <div class="info-card">
+          <div class="i-icon">🏛️</div>
+          <h4>Institution</h4>
+          <p>ESI Algiers — École nationale Supérieure d'Informatique</p>
+        </div>
+        <div class="info-card">
+          <div class="i-icon">📖</div>
+          <h4>Course</h4>
+          <p>Digital Economy — Module Project 2025/2026</p>
+        </div>
+        <div class="info-card">
+          <div class="i-icon">🎯</div>
+          <h4>Mission</h4>
+          <p>Empower farmers with technology to tackle water stress in agriculture</p>
+        </div>
+        <div class="info-card">
+          <div class="i-icon">🌍</div>
+          <h4>Impact</h4>
+          <p>Targeting farmers in Algeria, MENA region, and Sub-Saharan Africa</p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:2rem;background:linear-gradient(135deg,rgba(27,67,50,0.04),rgba(72,202,228,0.06))">
+        <h3 style="font-family:'Playfair Display',serif;color:var(--green-dark);margin-bottom:1rem;font-size:1.3rem">🌱 Our Vision</h3>
+        <p style="color:var(--text);line-height:1.8;font-size:0.95rem">Water stress is one of the most critical challenges facing modern agriculture, particularly in North Africa and arid regions worldwide. SmartFarm was born from the conviction that data-driven, technology-enabled farming can dramatically reduce water consumption while increasing crop yields. By combining IoT sensors, real-time weather data, and intelligent advisory systems, we aim to make precision agriculture accessible to every farmer — regardless of budget or technical expertise.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">🌿 SmartFarm</div>
+  <div class="footer-sub">Smart Agriculture Against Water Stress</div>
+  <div class="footer-links">
+    <a href="#" onclick="showPage('home')">Home</a>
+    <a href="#" onclick="showPage('weather')">Weather</a>
+    <a href="#" onclick="showPage('advisor')">Advisor</a>
+    <a href="#" onclick="showPage('market')">Marketplace</a>
+    <a href="#" onclick="showPage('knowledge')">Knowledge</a>
+    <a href="#" onclick="showPage('about')">About</a>
+  </div>
+  <div class="footer-copy">© 2026 SmartFarm · ESI Algiers — Team A2 · Digital Economy Project · All rights reserved.</div>
+</footer>
+
+<script>
+// ─── NAVIGATION ───────────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const target = document.getElementById('page-' + id);
+  if (target) { target.classList.add('active'); target.classList.add('fade-in'); }
+  document.querySelectorAll('.nav-links a').forEach(a => {
+    a.classList.toggle('active', a.dataset.page === id);
+  });
+  document.getElementById('navLinks').classList.remove('open');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (id === 'market') renderMarket();
+  if (id === 'knowledge') renderKnowledge();
+  setTimeout(initReveal, 100);
+  return false;
+}
+
+function toggleMenu() {
+  document.getElementById('navLinks').classList.toggle('open');
+}
+
+// ─── SCROLL REVEAL ─────────────────────────────────────
+function initReveal() {
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.page.active .reveal').forEach(el => obs.observe(el));
+}
+window.addEventListener('load', initReveal);
+
+// ─── WEATHER PAGE ─────────────────────────────────────
+const API_KEY = '4a00ae48dcfe6a0b10be6a843e9e3c5d';
+
+async function fetchWeather() {
+  const city = document.getElementById('cityInput').value.trim();
+  if (!city) return;
+  const errEl = document.getElementById('weatherError');
+  const dataEl = document.getElementById('weatherData');
+  errEl.innerHTML = '';
+  dataEl.innerHTML = '<div class="loading">⏳ Fetching weather data...</div>';
+  try {
+    const [cur, fore] = await Promise.all([
+      fetch(`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric`).then(r => r.json()),
+      fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric`).then(r => r.json())
+    ]);
+    if (cur.cod !== 200) throw new Error(cur.message || 'City not found');
+    renderWeather(cur, fore);
+  } catch (e) {
+    errEl.innerHTML = `<div class="error">⚠️ ${e.message}. Please check the city name and try again.</div>`;
+    dataEl.innerHTML = '';
+  }
+}
+
+function getStressLevel(temp, humidity, rain3d) {
+  let score = 0;
+  if (temp > 38) score += 3; else if (temp > 32) score += 2; else if (temp > 26) score += 1;
+  if (humidity < 30) score += 3; else if (humidity < 50) score += 2; else if (humidity < 60) score += 1;
+  if (rain3d < 1) score += 3; else if (rain3d < 5) score += 2; else if (rain3d < 15) score += 1;
+  if (score >= 7) return { level: 'Critical', cls: 'critical', emoji: '🔴', msg: 'Critical water stress — irrigate immediately! Crops are at severe risk.', color: '#dc3545' };
+  if (score >= 5) return { level: 'High', cls: 'high', emoji: '🟠', msg: 'High water stress — irrigation strongly recommended within 24 hours.', color: '#fd7e14' };
+  if (score >= 3) return { level: 'Medium', cls: 'medium', emoji: '🟡', msg: 'Moderate stress — monitor closely and prepare for irrigation.', color: '#ffc107' };
+  return { level: 'Low', cls: 'low', emoji: '🟢', msg: 'Good conditions — no immediate irrigation needed. Continue monitoring.', color: '#28a745' };
+}
+
+function getUV(temp, clouds) {
+  const est = Math.max(1, Math.round((temp / 5) + (100 - clouds) / 20));
+  return Math.min(11, est);
+}
+
+function renderWeather(cur, fore) {
+  const temp = Math.round(cur.main.temp);
+  const humidity = cur.main.humidity;
+  const wind = Math.round(cur.wind.speed * 3.6);
+  const clouds = cur.clouds.all;
+  const uv = getUV(temp, clouds);
+
+  // Get 3-day forecast (1 per day)
+  const days = {};
+  fore.list.forEach(item => {
+    const d = new Date(item.dt * 1000);
+    const key = d.toDateString();
+    if (!days[key]) days[key] = { temps: [], rain: 0, icon: item.weather[0].icon, desc: item.weather[0].main };
+    days[key].temps.push(item.main.temp);
+    days[key].rain += (item.rain ? item.rain['3h'] || 0 : 0);
+  });
+  const dayKeys = Object.keys(days).slice(1, 4);
+  const totalRain3d = dayKeys.reduce((s, k) => s + days[k].rain, 0);
+
+  const stress = getStressLevel(temp, humidity, totalRain3d);
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const weatherIcons = { Clear:'☀️', Clouds:'⛅', Rain:'🌧️', Drizzle:'🌦️', Thunderstorm:'⛈️', Snow:'❄️', Mist:'🌫️', Haze:'🌫️', Fog:'🌫️' };
+
+  const forecastHTML = dayKeys.map((k, i) => {
+    const d = days[k];
+    const avgT = Math.round(d.temps.reduce((a, b) => a + b, 0) / d.temps.length);
+    const date = new Date(fore.list.find(f => new Date(f.dt*1000).toDateString() === k).dt * 1000);
+    return `<div class="forecast-day">
+      <div class="day-name">${dayNames[date.getDay()]}</div>
+      <div class="day-icon">${weatherIcons[d.desc] || '🌤️'}</div>
+      <div class="day-temp">${avgT}°C</div>
+      <div class="day-rain">💧 ${d.rain.toFixed(1)} mm</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('weatherData').innerHTML = `
+    <div style="margin-bottom:1rem">
+      <h3 style="font-family:'Playfair Display',serif;color:var(--green-dark);font-size:1.5rem;margin-bottom:0.2rem">
+        📍 ${cur.name}, ${cur.sys.country}
+      </h3>
+      <p style="color:var(--text-light);font-size:0.9rem">${cur.weather[0].description} · Updated just now</p>
+    </div>
+    <div class="stress-card ${stress.cls}" style="margin-bottom:1.5rem">
+      <div class="stress-title">${stress.emoji} Water Stress Level: ${stress.level}</div>
+      <div class="stress-msg">${stress.msg}</div>
+    </div>
+    <div class="weather-grid" style="margin-bottom:1.5rem">
+      <div class="w-card"><div class="w-icon">🌡️</div><div class="w-label">Temperature</div><div class="w-value">${temp}<span class="w-unit">°C</span></div></div>
+      <div class="w-card"><div class="w-icon">💧</div><div class="w-label">Humidity</div><div class="w-value">${humidity}<span class="w-unit">%</span></div></div>
+      <div class="w-card"><div class="w-icon">💨</div><div class="w-label">Wind Speed</div><div class="w-value">${wind}<span class="w-unit"> km/h</span></div></div>
+      <div class="w-card"><div class="w-icon">☁️</div><div class="w-label">Cloud Cover</div><div class="w-value">${clouds}<span class="w-unit">%</span></div></div>
+      <div class="w-card"><div class="w-icon">🌅</div><div class="w-label">UV Index (est.)</div><div class="w-value">${uv}<span class="w-unit">/11</span></div></div>
+      <div class="w-card"><div class="w-icon">🌧️</div><div class="w-label">Rain (3 days)</div><div class="w-value">${totalRain3d.toFixed(1)}<span class="w-unit"> mm</span></div></div>
+    </div>
+    <h4 style="font-family:'Playfair Display',serif;color:var(--green-dark);margin-bottom:1rem;font-size:1.1rem">📅 3-Day Rainfall Forecast</h4>
+    <div class="forecast-grid">${forecastHTML}</div>
+    <div style="margin-top:1.5rem;padding:1rem 1.2rem;background:rgba(27,67,50,0.05);border-radius:var(--radius-sm);border-left:4px solid ${stress.color}">
+      <strong style="color:var(--green-dark)">💡 Farming Advisory:</strong>
+      <span style="color:var(--text);font-size:0.9rem"> ${getAdvice(stress.level, temp, humidity)}</span>
+    </div>
+  `;
+}
+
+function getAdvice(level, temp, hum) {
+  const advice = {
+    'Low': 'Conditions are favorable. Focus on regular monitoring and maintain your irrigation schedule. Good time for planting and fertilization.',
+    'Medium': 'Soil moisture may be decreasing. Check your soil sensors and consider a light irrigation cycle. Avoid heavy fertilization.',
+    'High': 'Water deficit is developing. Activate your irrigation system. Prioritize sensitive crops and apply mulch to reduce evaporation.',
+    'Critical': 'Emergency irrigation required. Delay all harvesting. Activate full irrigation capacity. Consider shade nets for sensitive crops.'
+  };
+  return advice[level] || '';
+}
+
+// ─── SENSOR ADVISOR ────────────────────────────────────
+const recommendations = {
+  sensors: {
+    arid:     ['Soil moisture sensors (deep)', 'Weather station', 'Flow sensors', 'Drone monitoring'],
+    'semi-arid': ['Soil moisture sensors', 'NPK sensors', 'Weather station', 'Flow sensors'],
+    mediterranean: ['Soil moisture sensors', 'NPK sensors', 'Weather station'],
+    tropical:  ['Soil moisture sensors', 'NPK sensors', 'Drone monitoring'],
+    temperate:  ['Soil moisture sensors', 'NPK sensors', 'Weather station'],
+  },
+  irrigation: {
+    wheat:     { low: 'Sprinkler irrigation', medium: 'Drip irrigation', high: 'Precision VRI systems' },
+    corn:      { low: 'Sprinkler irrigation', medium: 'Drip irrigation', high: 'Precision VRI systems' },
+    rice:      { low: 'Subsurface irrigation', medium: 'Subsurface irrigation', high: 'Precision VRI systems' },
+    vegetables:  { low: 'Drip irrigation', medium: 'Drip irrigation', high: 'Precision VRI systems' },
+    'fruit-trees': { low: 'Drip irrigation', medium: 'Drip irrigation', high: 'Precision VRI systems' },
+    other:     { low: 'Sprinkler irrigation', medium: 'Drip irrigation', high: 'Drip irrigation' },
+  },
+  savings: {
+    arid: { low: 25, medium: 38, high: 55 },
+    'semi-arid': { low: 20, medium: 32, high: 48 },
+    mediterranean: { low: 18, medium: 28, high: 42 },
+    tropical: { low: 15, medium: 25, high: 40 },
+    temperate: { low: 12, medium: 22, high: 35 },
+  },
+  costs: {
+    small:  { low: '$80–$250', medium: '$250–$700', high: '$700–$2,000' },
+    medium: { low: '$200–$600', medium: '$600–$2,500', high: '$2,500–$8,000' },
+    large:  { low: '$500–$1,500', medium: '$1,500–$6,000', high: '$6,000–$20,000' },
+  }
+};
+
+function getRecommendation() {
+  const region = document.getElementById('region').value;
+  const crop = document.getElementById('crop').value;
+  const size = document.getElementById('farmSize').value;
+  const budget = document.getElementById('budget').value;
+  const water = document.getElementById('waterSource').value;
+
+  if (!region || !crop || !size || !budget || !water) {
+    alert('Please fill in all fields to get your personalized recommendation.');
+    return;
+  }
+
+  const sensors = recommendations.sensors[region] || ['Soil moisture sensors', 'Weather station'];
+  const irrigationTech = recommendations.irrigation[crop]?.[budget] || 'Drip irrigation';
+  const savingsPct = recommendations.savings[region]?.[budget] || 25;
+  const cost = recommendations.costs[size]?.[budget] || '$200–$1,000';
+
+  const extraSensors = [];
+  if (budget !== 'low') extraSensors.push('NPK sensors');
+  if (water === 'groundwater' || water === 'river') extraSensors.push('Water flow sensors');
+  if (size === 'large' && budget === 'high') extraSensors.push('Drone monitoring system');
+  const allSensors = [...new Set([...sensors, ...extraSensors])];
+
+  const reasons = [];
+  if (region === 'arid' || region === 'semi-arid') reasons.push('Your arid region demands aggressive water monitoring to prevent crop failure.');
+  if (budget === 'low') reasons.push('Budget-conscious setup prioritizing high-impact, low-cost sensors.');
+  if (budget === 'high') reasons.push('Full precision agriculture suite for maximum efficiency and yield.');
+  if (water === 'rain') reasons.push('Rain-fed system recommends storage & predictive irrigation scheduling.');
+  if (crop === 'vegetables' || crop === 'fruit-trees') reasons.push('High-value crops justify investment in precision drip systems.');
+  if (reasons.length === 0) reasons.push('This combination balances cost and performance for your farm profile.');
+
+  document.getElementById('recBox').innerHTML = `
+    <h3 style="font-family:'Playfair Display',serif;color:var(--green-dark);font-size:1.3rem;margin-bottom:1.5rem">🎯 Your Personalized Plan</h3>
+    
+    <div class="rec-section">
+      <div class="rec-section-title">📡 Recommended Sensors</div>
+      <div>${allSensors.map(s => `<span class="rec-tag">✓ ${s}</span>`).join('')}</div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="rec-section">
+      <div class="rec-section-title">💧 Irrigation Technology</div>
+      <span class="rec-tag blue">✓ ${irrigationTech}</span>
+    </div>
+
+    <div class="divider"></div>
+    <div class="rec-section">
+      <div class="rec-section-title">💰 Estimated Cost Range</div>
+      <div style="font-size:1.4rem;font-weight:800;color:var(--green-dark);font-family:'Playfair Display',serif">${cost}</div>
+      <div style="font-size:0.82rem;color:var(--text-light);margin-top:0.3rem">Based on ${size} farm with ${budget} budget</div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="rec-section">
+      <div class="rec-section-title">🌊 Estimated Water Savings</div>
+      <div style="font-size:1.6rem;font-weight:800;color:var(--green-mid);font-family:'Playfair Display',serif">${savingsPct}%</div>
+      <div class="savings-bar"><div class="savings-fill" id="savingsBar" style="width:0%"></div></div>
+      <div style="font-size:0.8rem;color:var(--text-light);margin-top:0.4rem">Compared to traditional irrigation</div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="rec-section">
+      <div class="rec-section-title">💡 Why This Combination?</div>
+      <ul style="padding-left:1.2rem;color:var(--text);font-size:0.9rem;line-height:1.8">
+        ${reasons.map(r => `<li>${r}</li>`).join('')}
+      </ul>
+    </div>
+    <button class="btn-full" onclick="showPage('market')" style="margin-top:0.5rem">🛒 Shop These Products →</button>
+  `;
+  setTimeout(() => {
+    const bar = document.getElementById('savingsBar');
+    if (bar) bar.style.width = savingsPct + '%';
+  }, 200);
+}
+
+// ─── MARKETPLACE ───────────────────────────────────────
+const products = [
+  { emoji: '💧', name: 'Soil Moisture Sensor — Basic', badge: 'Sensor', desc: 'Capacitive sensor for real-time soil moisture readings. Easy DIY installation. Compatible with Arduino and Raspberry Pi.', price: '$8–$25', best: 'Small farms · All crops', detail: 'Measures volumetric water content (VWC) at multiple depths. IP67 waterproof. 0–3V analog output. Ideal for gardens and small vegetable farms. Battery life: 1 year.', link: 'https://www.amazon.com/s?k=soil+moisture+sensor' },
+  { emoji: '🔬', name: 'Soil Moisture Sensor — Professional', badge: 'Sensor Pro', desc: 'High-precision multi-depth sensor with IoT connectivity and data logging. Calibrated for various soil types.', price: '$80–$200', best: 'Medium/Large farms · All crops', detail: 'TDR/FDR technology for ±1% accuracy. RS-485 or SDI-12 interface. Works with most farm management systems. Includes 3-year warranty and cloud dashboard.', link: 'https://www.amazon.com/s?k=professional+soil+moisture+sensor+agriculture' },
+  { emoji: '🧪', name: 'NPK Soil Sensor', badge: 'Nutrition', desc: 'Measures Nitrogen, Phosphorus, and Potassium levels in real time. Prevents over-fertilization and nutrient deficiencies.', price: '$60–$180', best: 'Vegetables · Fruit trees · Precision farming', detail: 'Electrochemical sensing technology. Simultaneously measures N, P, K, pH, and EC. RS485 Modbus output. Stainless steel probe rated for 5+ years outdoor use.', link: 'https://www.aliexpress.com/w/wholesale-npk-soil-sensor.html' },
+  { emoji: '🌤️', name: 'Weather Station Mini', badge: 'Weather', desc: 'Compact all-in-one farm weather station. Measures temperature, humidity, rainfall, wind speed and direction, and UV index.', price: '$120–$350', best: 'All farm sizes · All regions', detail: 'Solar-powered with 30-day battery backup. Wi-Fi + LoRa connectivity. App-based monitoring with alerts. Includes tripod mount and professional calibration certificate.', link: 'https://www.amazon.com/s?k=agricultural+weather+station' },
+  { emoji: '🚰', name: 'Smart Drip Irrigation Kit', badge: 'Irrigation', desc: 'Complete programmable drip system for up to 500m². Includes timer, emitters, tubing, and pressure regulator.', price: '$45–$150', best: 'Small farms · Vegetables · Fruit trees', detail: 'Covers up to 500 m² (50 plants). Adjustable flow 0.5–8 L/hr per emitter. UV-resistant PE tubing. Programmable timer with up to 8 daily cycles. Reduces water use by 30–50%.', link: 'https://www.amazon.com/s?k=drip+irrigation+kit+agriculture' },
+  { emoji: '🤖', name: 'IoT Irrigation Controller', badge: 'Smart Control', desc: 'Cloud-connected multi-zone irrigation controller. Integrates with weather APIs for smart scheduling and automatic skip on rain days.', price: '$90–$280', best: 'Medium/Large farms · All crops', detail: '8–16 zone control. Wi-Fi + Ethernet connectivity. Integrates with OpenWeatherMap, soil sensors, and flow meters. API-compatible. IFTTT and Alexa support. 5-year warranty.', link: 'https://www.amazon.com/s?k=smart+irrigation+controller+IoT' },
+  { emoji: '📊', name: 'Water Flow Sensor', badge: 'Monitoring', desc: 'Hall-effect flow meter for precise water consumption tracking per irrigation zone. Detects leaks and pipe failures instantly.', price: '$15–$60', best: 'All farms · Groundwater · River-fed systems', detail: 'Hall-effect sensor with pulse output. Measures 1–30 L/min. G1/2 to G2 thread sizes available. Works at 5–24V. Accuracy ±2%. Pairs with Arduino, ESP32, or any irrigation controller.', link: 'https://www.aliexpress.com/w/wholesale-water-flow-sensor-agriculture.html' },
+  { emoji: '☀️', name: 'Solar-Powered Irrigation Pump', badge: 'Energy', desc: 'Submersible DC pump powered entirely by solar panels. No grid electricity needed. Ideal for remote fields.', price: '$180–$650', best: 'Arid/Semi-arid regions · Remote farms · Off-grid', detail: 'Includes 100–200W solar panel and MPPT controller. Pumps up to 3,000 L/day. Suitable for wells 0–50m deep. Automatic dry-run protection. 3-year motor warranty.', link: 'https://www.amazon.com/s?k=solar+irrigation+pump+agriculture' },
+  { emoji: '🚁', name: 'Drone for Crop Monitoring', badge: 'Aerial', desc: 'Agricultural UAV with multispectral camera for NDVI mapping, plant stress detection, and field scouting. Covers 100+ ha per flight.', price: '$800–$3,500', best: 'Large farms · Precision agriculture · All crops', detail: 'Multispectral + RGB cameras. NDVI, NDRE, CWSI vegetation indices. 45-min flight time, GPS auto-return. Compatible with DJI Terra, Pix4D, AgEagle software. Generates actionable prescription maps.', link: 'https://www.amazon.com/s?k=agricultural+drone+crop+monitoring' },
+];
+
+function renderMarket() {
+  const grid = document.getElementById('marketGrid');
+  if (grid.innerHTML !== '') return;
+  grid.innerHTML = products.map((p, i) => `
+    <div class="product-card">
+      <div class="product-img">${p.emoji}</div>
+      <div class="product-body">
+        <span class="product-badge">${p.badge}</span>
+        <div class="product-name">${p.name}</div>
+        <div class="product-desc">${p.desc}</div>
+        <div class="product-price">${p.price}</div>
+        <div class="product-best">✅ Best for: ${p.best}</div>
+        <div class="product-btns">
+          <a href="${p.link}" target="_blank" class="btn-buy">🛒 Buy Now</a>
+          <button class="btn-learn" onclick="toggleDetail(${i})">Learn More</button>
+        </div>
+        <div class="product-detail" id="detail-${i}">📋 ${p.detail}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleDetail(i) {
+  const el = document.getElementById('detail-' + i);
+  el.classList.toggle('open');
+}
+
+// ─── KNOWLEDGE CENTER ──────────────────────────────────
+const articles = [
+  {
+    cat: 'Fundamentals', title: 'What is Smart Agriculture?',
+    desc: 'Discover how IoT, AI, and data analytics are revolutionizing farming practices worldwide, from sensor networks to satellite monitoring.',
+    time: '5 min read',
+    content: 'Smart agriculture (also called precision agriculture or Agriculture 4.0) uses digital technology to optimize farm inputs and maximize outputs. It combines IoT sensors, drones, satellite imagery, AI analytics, and automation to give farmers real-time, field-level insights. Instead of applying water, fertilizer, or pesticides uniformly across a field, smart agriculture enables variable-rate application — putting resources exactly where and when they\'re needed. This reduces waste by 20–50%, cuts costs, and increases yields by 10–30%. Technologies involved include soil sensors, weather stations, GPS-guided machinery, drone imaging, and cloud-based farm management systems.'
+  },
+  {
+    cat: 'Technology', title: 'How IoT Saves Water in Farming',
+    desc: 'A deep dive into how connected sensors, automated controllers, and data platforms work together to cut agricultural water use by up to 50%.',
+    time: '7 min read',
+    content: 'IoT in agriculture creates a continuous data loop: soil sensors measure moisture, weather stations provide evapotranspiration data, and irrigation controllers use both to decide exactly when and how much to irrigate. This "closed-loop" approach eliminates guesswork. Field trials show IoT-managed drip systems use 30–50% less water than conventional flood irrigation, while producing equal or better yields. Key components: (1) Soil moisture sensors placed at root depth, (2) LoRa or NB-IoT connectivity for data transmission, (3) Cloud analytics for decision-making, (4) Automated valve controllers for precision delivery. Implementation cost has dropped 80% since 2015, making IoT farming accessible to smallholders.'
+  },
+  {
+    cat: 'Science', title: 'Understanding Water Stress in Crops',
+    desc: 'Learn the biological mechanisms of plant water stress, how to recognize early symptoms, and the critical thresholds for different crops.',
+    time: '6 min read',
+    content: 'Water stress occurs when plant demand for water exceeds supply. There are two types: (1) Drought stress — inadequate soil water; (2) Waterlogging — root oxygen deficiency. Plants respond progressively: first closing stomata (reducing photosynthesis), then wilting, then cell damage, and finally death. Each crop has critical stress thresholds — corn is most sensitive during tasseling (flowering), wheat during grain fill, and vegetables during fruiting. Early indicators include leaf rolling, color change from dark green to blue-green, and reduced growth rate. Soil tension of 30–60 cbar typically triggers irrigation for most crops. Infrared sensors and CWSI (Crop Water Stress Index) calculated from canopy temperature can detect stress 48–72 hours before visible symptoms appear.'
+  },
+  {
+    cat: 'Guide', title: 'How to Install Soil Sensors',
+    desc: 'Step-by-step installation guide for capacitive and TDR soil moisture sensors, including depth placement, calibration, and data logging setup.',
+    time: '8 min read',
+    content: 'Step 1: Choose sensor depth based on crop root zone (10cm for vegetables, 30cm for cereals, 60cm for fruit trees). Step 2: Prepare the installation hole — use an auger matching sensor diameter exactly to ensure good soil contact. Step 3: Mix excavated soil into slurry and backfill around sensor to eliminate air gaps. Step 4: Route cables to data logger avoiding areas with heavy machinery traffic. Step 5: Calibrate using gravimetric samples — take 3 wet and 3 dry readings with lab verification. Step 6: Set alert thresholds — typically irrigate when VWC drops to 50% of field capacity. Step 7: Download your first week of data and validate against observed plant condition. Pro tip: Install sensors in triplicates to account for soil spatial variability. Replace sensors every 5–7 years.'
+  },
+  {
+    cat: 'Comparison', title: 'Drip vs Flood Irrigation — Complete Comparison',
+    desc: 'A comprehensive cost-benefit analysis comparing traditional flood irrigation with modern drip systems across water use, yield, and ROI.',
+    time: '6 min read',
+    content: 'FLOOD IRRIGATION: Low upfront cost ($10–50/ha), high water use (8,000–15,000 m³/ha/season), 40–60% efficiency, causes soil compaction and salinization, labor-intensive, no precise control. DRIP IRRIGATION: Higher upfront cost ($500–3,000/ha), low water use (3,000–6,000 m³/ha/season), 85–95% efficiency, maintains soil structure, can fertilize through lines (fertigation), precise control by zone. VERDICT: Drip systems pay back their cost in 2–4 years through water savings alone, before counting yield improvements. In water-scarce regions, drip is not just economical — it\'s essential for long-term farm viability. Subsurface drip adds another 15–20% efficiency by eliminating surface evaporation. For smallholders, micro-drip kits starting at $50 offer immediate ROI.'
+  },
+  {
+    cat: 'Success Stories', title: 'Real Wins: Ghana & China Case Studies',
+    desc: 'How smallholder farmers in Ghana and large-scale operations in China achieved remarkable results using smart agriculture technology.',
+    time: '5 min read',
+    content: 'GHANA — Savannah Region: GSMA-funded IoT project equipped 2,400 smallholders with soil sensors and SMS-based irrigation alerts. Results after 2 seasons: 38% reduction in water use, 28% increase in maize yield, and $180/farm annual net gain — significant for farmers earning under $1,000/year. Sensors were powered by small solar panels and used GSM for low-cost connectivity. CHINA — Xinjiang Province: Large-scale cotton production (50,000 ha) switched from flood to smart drip irrigation with satellite guidance. Results: water savings of 5.2 billion liters/season, yield increase of 22%, and complete elimination of soil salinization that had previously affected 30% of fields. The system achieved full ROI in 18 months. KEY INSIGHT from both: farmer training and local technical support mattered as much as the technology itself.'
+  },
+];
+
+function renderKnowledge() {
+  const grid = document.getElementById('knowledgeGrid');
+  if (grid.innerHTML !== '') return;
+  grid.innerHTML = articles.map((a, i) => `
+    <div class="article-card">
+      <div class="article-top">
+        <div class="article-cat">${a.cat.toUpperCase()}</div>
+        <div class="article-title">${a.title}</div>
+        <div class="article-desc">${a.desc}</div>
+      </div>
+      <div class="article-meta">
+        <div class="article-time">📖 ${a.time}</div>
+        <button class="btn-expand" onclick="toggleArticle(${i})">Read More ↓</button>
+      </div>
+      <div class="article-content" id="art-${i}">${a.content}</div>
+    </div>
+  `).join('');
+}
+
+function toggleArticle(i) {
+  const el = document.getElementById('art-' + i);
+  const btn = el.previousElementSibling.querySelector('.btn-expand');
+  el.classList.toggle('open');
+  btn.textContent = el.classList.contains('open') ? 'Close ↑' : 'Read More ↓';
+}
+
+// ─── INIT ──────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  initReveal();
+});
+</script>
+</body>
+</html>
